@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 )
 
 var upgrader = websocket.Upgrader{
@@ -31,7 +33,64 @@ type BroadcastMessage struct {
 	Message string `json:"message"`
 }
 
+type ChatMessage struct {
+	RoomID    string    `json:"room_id"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+	Message   string    `json:"message"`
+}
+
+// Env variable
+var rabbitHost = "amqp://user:password@localhost:5672/"
+
 var rooms = make(map[string]*Room) // Map of roomId to Room
+
+func publishChatMessageToRabbitMQ(chatMessage ChatMessage) error {
+	conn, err := amqp.Dial(rabbitHost)
+	if err != nil {
+		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+	}
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	if err != nil {
+		return fmt.Errorf("failed to open a channel: %w", err)
+	}
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(
+		"chat_histories", // name
+		"direct",         // type
+		true,             // durable
+		false,            // auto-deleted
+		false,            // internal
+		false,            // no-wait
+		nil,              // arguments
+	)
+	if err != nil {
+		return fmt.Errorf("failed to declare an exchange: %w", err)
+	}
+
+	body, err := json.Marshal(chatMessage)
+	if err != nil {
+		return fmt.Errorf("failed to marshal chat message: %w", err)
+	}
+
+	err = ch.Publish(
+		"chat_histories", // exchange
+		"message",        // routing key
+		false,            // mandatory
+		false,            // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		})
+	if err != nil {
+		return fmt.Errorf("failed to publish a message: %w", err)
+	}
+
+	return nil
+}
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Get Header Bearer Token
@@ -150,6 +209,20 @@ func broadcastToRoom(roomID string, payloadMessage string) {
 
 	//encode broadcast message
 	broadcastMessageBytes, _ := json.Marshal(broadcastMessage)
+
+	//store to rabbitmq using goroutine
+	go func() {
+		chatMessage := ChatMessage{
+			RoomID:    roomID,
+			Email:     response.Data.Email,
+			CreatedAt: time.Now(),
+			Message:   payload.Message,
+		}
+		err := publishChatMessageToRabbitMQ(chatMessage)
+		if err != nil {
+			fmt.Println("Error publishing chat message to RabbitMQ:", err)
+		}
+	}()
 
 	if room, ok := rooms[roomID]; ok {
 		room.Mutex.Lock()
