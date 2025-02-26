@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   go-app:
     build: .
@@ -9,4 +8,4 @@ services:
     volumes:
       - .:/app
     working_dir: /app
-    command: go run *.go
+    command: go run main.go api.go
