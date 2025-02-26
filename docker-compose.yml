@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  go-app:
+    build: .
+    container_name: websocket-api
+    ports:
+      - "80:80"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: go run *.go
