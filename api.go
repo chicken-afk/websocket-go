@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/sirupsen/logrus"
 )
@@ -22,8 +23,8 @@ type UserInfo struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-var serviceApi = "http://localhost:8080/api/v1"
-var xApiKey = "1234567890"
+var serviceApi = os.Getenv("BACKEND_API")
+var xApiKey = os.Getenv("X_API_KEY")
 
 func GetUserInfoByToken(token string) (ResponseData, error) {
 	req, err := http.NewRequest("GET", serviceApi+"/profile", nil)

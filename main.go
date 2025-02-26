@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -41,7 +43,7 @@ type ChatMessage struct {
 }
 
 // Env variable
-var rabbitHost = "amqp://user:password@localhost:5672/"
+var rabbitHost = os.Getenv("RABBIT_HOST")
 
 var rooms = make(map[string]*Room) // Map of roomId to Room
 
@@ -241,11 +243,18 @@ func broadcastToRoom(roomID string, payloadMessage string) {
 }
 
 func main() {
+	//godotenv initialisation
+	err := godotenv.Load()
+	if err != nil {
+		logrus.Fatalf("Error loading .env file")
+		return
+	}
+
 	http.HandleFunc("/ws", handleWebSocket)
 
 	port := "80"
 	fmt.Printf("WebSocket server is listening on ws://localhost:%s/ws\n", port)
-	err := http.ListenAndServe(":"+port, nil)
+	err = http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		fmt.Println("Error starting server:", err)
 	}
