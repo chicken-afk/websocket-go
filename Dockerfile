@@ -14,4 +14,4 @@ RUN go mod tidy
 COPY . .
 
 # Run the application
-CMD ["go", "run", "*.go"]
+CMD ["go", "run", "main.go", "api.go"]
