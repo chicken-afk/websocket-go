@@ -214,18 +214,17 @@ func broadcastToRoom(roomID string, payloadMessage string) {
 	broadcastMessageBytes, _ := json.Marshal(broadcastMessage)
 
 	//store to rabbitmq using goroutine
-	go func() {
-		chatMessage := ChatMessage{
-			RoomID:    roomID,
-			Email:     response.Data.Email,
-			CreatedAt: time.Now(),
-			Message:   payload.Message,
-		}
-		err := publishChatMessageToRabbitMQ(chatMessage)
-		if err != nil {
-			fmt.Println("Error publishing chat message to RabbitMQ:", err)
-		}
-	}()
+	chatMessage := ChatMessage{
+		RoomID:    roomID,
+		Email:     response.Data.Email,
+		CreatedAt: time.Now(),
+		Message:   payload.Message,
+	}
+	err = publishChatMessageToRabbitMQ(chatMessage)
+	if err != nil {
+		fmt.Println("Error publishing chat message to RabbitMQ:", err)
+		return
+	}
 
 	if room, ok := rooms[roomID]; ok {
 		room.Mutex.Lock()
