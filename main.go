@@ -43,11 +43,12 @@ type ChatMessage struct {
 }
 
 // Env variable
-var rabbitHost = os.Getenv("RABBIT_HOST")
 
 var rooms = make(map[string]*Room) // Map of roomId to Room
 
 func publishChatMessageToRabbitMQ(chatMessage ChatMessage) error {
+	var rabbitHost = os.Getenv("RABBIT_HOST")
+
 	conn, err := amqp.Dial(rabbitHost)
 	if err != nil {
 		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
