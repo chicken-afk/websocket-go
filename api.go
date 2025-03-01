@@ -29,6 +29,7 @@ func GetUserInfoByToken(token string) (ResponseData, error) {
 
 	logrus.Info("Service API:", serviceApi)
 	logrus.Info("X-API-KEY:", xApiKey)
+	logrus.Info("Token:", token)
 
 	req, err := http.NewRequest("GET", serviceApi+"/profile", nil)
 	if err != nil {
