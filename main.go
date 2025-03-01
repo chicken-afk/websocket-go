@@ -48,7 +48,7 @@ var rooms = make(map[string]*Room) // Map of roomId to Room
 
 func publishChatMessageToRabbitMQ(chatMessage ChatMessage) error {
 	var rabbitHost = os.Getenv("RABBIT_HOST")
-
+	logrus.Info("RabbitMQ Host:", rabbitHost)
 	conn, err := amqp.Dial(rabbitHost)
 	if err != nil {
 		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
