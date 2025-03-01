@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -31,37 +32,33 @@ func GetUserInfoByToken(token string) (ResponseData, error) {
 	logrus.Info("X-API-KEY:", xApiKey)
 	logrus.Info("Token:", token)
 
+	// Membuat request HTTP
 	req, err := http.NewRequest("GET", serviceApi+"/profile", nil)
 	if err != nil {
 		return ResponseData{}, err
 	}
 
+	// Menambahkan header Authorization dan lainnya
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-api-key", xApiKey)
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	logrus.Info("Response:", resp)
-	logrus.Info("Response body:", resp.Body)
-	logrus.Info("Response status:", resp.Status)
 	if err != nil {
 		return ResponseData{}, err
 	}
-
 	defer resp.Body.Close()
-	var Response ResponseData
-	err = json.NewDecoder(resp.Body).Decode(&Response)
-	if err != nil {
-		return ResponseData{}, err
-	}
-	logrus.Info("Response Data:", Response)
 
+	// Cek status code terlebih dahulu
 	if resp.StatusCode != http.StatusOK {
 		logrus.Errorf("Failed to fetch user info, status: %d", resp.StatusCode)
-		return ResponseData{}, err
+		body, _ := io.ReadAll(resp.Body) // Baca body untuk log error
+		logrus.Infof("Error Response Body: %s", string(body))
+		return ResponseData{}, fmt.Errorf("failed to fetch user info with status: %d", resp.StatusCode)
 	}
 
-	// Cetak hasilnya (bisa diubah sesuai kebutuhan)
+	// Membaca body untuk debugging dan logging
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logrus.Errorf("Failed to read response body: %v", err)
@@ -71,5 +68,14 @@ func GetUserInfoByToken(token string) (ResponseData, error) {
 	// Log the response body for debugging
 	logrus.Infof("User Info Response: %s", string(body))
 
-	return Response, nil
+	// Dekode JSON ke struct ResponseData
+	var response ResponseData
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		logrus.Errorf("Failed to decode JSON response: %v", err)
+		return ResponseData{}, err
+	}
+
+	logrus.Info("Response Data:", response)
+	return response, nil
 }
