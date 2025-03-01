@@ -36,7 +36,7 @@ func GetUserInfoByToken(token string) (ResponseData, error) {
 		return ResponseData{}, err
 	}
 
-	req.Header.Set("Authorization", token)
+	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-api-key", xApiKey)
 	client := &http.Client{}
