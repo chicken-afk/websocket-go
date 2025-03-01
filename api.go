@@ -26,6 +26,10 @@ type UserInfo struct {
 func GetUserInfoByToken(token string) (ResponseData, error) {
 	var serviceApi = os.Getenv("BACKEND_API")
 	var xApiKey = os.Getenv("X_API_KEY")
+
+	logrus.Info("Service API:", serviceApi)
+	logrus.Info("X-API-KEY:", xApiKey)
+
 	req, err := http.NewRequest("GET", serviceApi+"/profile", nil)
 	if err != nil {
 		return ResponseData{}, err
